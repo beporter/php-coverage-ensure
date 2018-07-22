@@ -23,17 +23,14 @@ function usage($script = null, $exitCode = 0) {
     code coverage remains above a designated percentage.
 
 Usage:
-    bin/${script} [coverage_percent] [clover.xml]
+    ${script} [-h] | <clover.xml> [coverage_percent]
+
+          clover.xml - Filesystem path to an XML file produced by PHPunit's
+                       code coverage.
 
     coverage_percent - Optional integer value between 0 and 100 represented
                        the minimum required percentage of coverage required.
                        If not provided, defaults to 100.
-
-          clover.xml - Optional filesystem path to an XML file produced by
-                       PHPunit's code coverage. If absent, the script will
-                       attempt to obtain the correct path using the project's
-                       phpunit.xml[.dist] file and will exit with an error
-                       if this fails.
 
 EOD;
 
@@ -46,63 +43,28 @@ EOD;
  * main() ===================================================================
  */
 
-if (isset($argv[1]) && $argv[1] == '-h') {
+if (isset($argv[1]) && $argv[1] == '-h' || $argc < 2) {
     usage();
 }
 
 // Set up variables.
-$percentage = (isset($argv[1]) ? (int)$argv[1] : 100);
-$percentage = max(0, min(100, $percentage));
+$inputFile = $argv[1];
+$percentage = max(0, min(100, isset($argv[2]) ? (int)$argv[2] : 100));
 
-// Try to auto-detect the clover file path.
-if (isset($argv[2])) {
-    $inputFile = $argv[2];
-} else {
-    $baseDir = getcwd();
-    $phpunitConfigFile = "{$baseDir}/phpunit.xml";
-    if (!is_readable($phpunitConfigFile)) {
-        $phpunitConfigFile = "{$baseDir}/phpunit.xml.dist";
-        if (!is_readable($phpunitConfigFile)) {
-            echo "!! Could not guess path to clover.xml file. Aborting." . PHP_EOL;
-            exit(2);
-        }
-    }
-
-    $xml = new SimpleXMLElement(file_get_contents($phpunitConfigFile));
-    $snippet = $xml->xpath('//log[@type="coverage-clover"]');
-    if (!count($snippet)) {
-        echo "!! phpunit.xml file does not specify a coverage-clover log. Aborting." . PHP_EOL;
-        exit(3);
-    }
-
-    $snippet = array_pop($snippet);
-    if (!isset($snippet['target'])) {
-        echo '!! phpunit.xml: <log type="coverage-clover"> does not specify a `target` attribute. Aborting.' . PHP_EOL;
-        exit(4);
-    }
-
-    $snippet = (string)$snippet['target'];
-    $inputFile = "{$baseDir}/{$snippet}";
-}
-
-// Parse the clover report file.
-if (!is_readable(realpath($inputFile))) {
-    echo "!! Invalid input file provided: `{$inputFile}`. Aborting." . PHP_EOL;
-    exit(5);
-}
+// Open clover file.
 $xml = new SimpleXMLElement(file_get_contents(realpath($inputFile)));
 $metrics = $xml->xpath('//metrics');
-$totalElements = 0;
-$checkedElements = 0;
+$totalElements = $checkedElements = 0;
 
+// Sum up metrics.
 foreach ($metrics as $metric) {
-    $totalElements += (int) $metric['elements'];
-    $checkedElements += (int) $metric['coveredelements'];
+    $totalElements += (int)$metric['elements'];
+    $checkedElements += (int)$metric['coveredelements'];
 }
 
 $coverage = ($checkedElements / $totalElements) * 100;
 
-// Spit out the results.
+// Print the results.
 echo 'Code coverage is ' . number_format($coverage, 1) . '% - ';
 
 if ($coverage < $percentage) {

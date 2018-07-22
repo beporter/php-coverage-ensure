@@ -24,6 +24,7 @@
         "php": "^7.0.0"
     },
     "bin": [
-    	"bin/coverage-ensure"
+    	"bin/coverage-ensure",
+    	"bin/clover-path-from-phpunit"
     ]
 }

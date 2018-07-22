@@ -1,0 +1,85 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Prints usage information and exits.
+ *
+ * @param string $script Typically set to basename($argv[0]) when the method is called.
+ * @param int $exitCode The numeric exit code to return. 0 = success. >0 = failure.
+ * @return void
+ */
+function usage($script = null, $exitCode = 0) {
+    $script = $script ?: basename(__FILE__);
+    $usage = <<<EOD
+
+{$script}
+    Attempts to find a local phpunit.xml.dist or phpunit.xml. When found,
+    searches the file's <logging> block looking for a
+    <log type="coverage-clover" ... /> entry. When that is found, this script
+    returns the `target` filesystem path.
+
+    Intended to be used with `coverage-ensure` to provide the clover.xml path
+    to read.
+
+    Exits >0 for any error condition encountered.
+
+Usage:
+    ${script} [-h]
+
+    -h    Display this help text and exit.
+
+EOD;
+
+    echo $usage;
+    exit($exitCode);
+}
+
+/**
+ * Prints an error message to STDERR and exits.
+ *
+ * @param string $msg The string to output. An endline will be appended.
+ * @param int $exitCode The numeric exit code to return. Default = 1.
+ * @return void
+ */
+function err($msg, $code = 1) {
+	$fh = fopen('php://stderr','a');
+	fwrite($fh, $msg . PHP_EOL);
+	exit($code);
+}
+
+/**
+ * main() ===================================================================
+ */
+
+if (isset($argv[1]) && $argv[1] == '-h') {
+    usage();
+}
+
+$baseDir = getcwd();
+$phpunitConfigFile = "{$baseDir}/phpunit.xml";
+if (!is_readable($phpunitConfigFile)) {
+	$phpunitConfigFile = "{$baseDir}/phpunit.xml.dist";
+	if (!is_readable($phpunitConfigFile)) {
+		err('!! Could not guess path to phpunit.xml[.dist] file.', 2);
+	}
+}
+
+try {
+    $xml = new SimpleXMLElement(file_get_contents($phpunitConfigFile));
+    $snippet = $xml->xpath('//log[@type="coverage-clover"]');
+} catch (Exception $e) {
+	err('!! Can not parse file: ' . $e->getMessage(), 5);
+}
+
+if (!count($snippet)) {
+	err('!! File does not specify a coverage-clover log.', 3);
+}
+
+$snippet = array_pop($snippet);
+if (!isset($snippet['target'])) {
+	err('!! <log type="coverage-clover"> does not specify a `target` attribute.', 4);
+}
+
+$cloverPath = (string)$snippet['target'];
+
+echo "{$baseDir}/{$cloverPath}" . PHP_EOL;
