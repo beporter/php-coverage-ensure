@@ -26,10 +26,10 @@ Before calling the script, you must produce a clover coverage report for your pr
 $ vendor/bin/phpunit --coverage-clover tmp/clover.xml
 ```
 
-Then call the script providing a minimum acceptable percentage and the path to a clover XML coverage report file.
+Then call the script providing the path to a clover XML coverage report file and an optional minimum acceptable percentage.
 
 ```shell
-$ vendor/bin/php-coverage-ensure 80 tmp/clover.xml
+$ vendor/bin/coverage-ensure tmp/clover.xml 80
 ```
 
 
@@ -56,7 +56,7 @@ If you want PHPUnit to _always_ generate a clover report, you can also add the f
 This package also includes a helper script that can determine the location of your clover report file by reading your phpunit config file:
 
 ```shell
-$ vendor/bin/php-coverage-ensure 80 `vendor/bin/locate-clover-report`
+$ vendor/bin/coverage-ensure `vendor/bin/clover-path-from-phpunit` 80
 ```
 
 
@@ -76,6 +76,11 @@ Please use [GitHub Isuses](https://github.com/beporter/php-coverage-ensure/issue
 ### Development
 
 Please fork this repository, create a new topic branch, and submit a [pull request](https://github.com/beporter/php-coverage-ensure/issues) for your work.
+
+
+## Credits
+
+This work was originally done as a part of [loadsys/cakephp-shell-scripts](https://github.com/loadsys/CakePHP-Shell-Scripts) and broken out here for greater portability/reuse.
 
 
 ## License
