@@ -1,4 +1,4 @@
-#!/usr/bin/env php
+#!/usr/bin/env php -d register_argc_argv=1
 <?php
 // @ref: http://ocramius.github.io/blog/automated-code-coverage-check-for-github-pull-requests-with-travis/
 
@@ -23,7 +23,7 @@ function usage($script = null, $exitCode = 0) {
     code coverage remains above a designated percentage.
 
 Usage:
-    ${script} [-h] | <clover.xml> [coverage_percent]
+    {$script} [-h] | <clover.xml> [coverage_percent]
 
           clover.xml - Filesystem path to an XML file produced by PHPunit's
                        code coverage.
@@ -38,6 +38,11 @@ EOD;
     exit($exitCode);
 }
 
+function p($s, $code = 0) {
+    fwrite($code > 0 ? STDERR : STDOUT, $s . PHP_EOL);
+    exit($code);
+}
+
 
 /**
  * main() ===================================================================
@@ -48,12 +53,25 @@ if (isset($argv[1]) && $argv[1] == '-h' || $argc < 2) {
 }
 
 // Set up variables.
-$inputFile = $argv[1];
-$percentage = max(0, min(100, isset($argv[2]) ? (int)$argv[2] : 100));
+if (preg_match('/^\.?\//', $argv[1])) {
+    $inputFile = $argv[1];
+} else {
+    $inputFile = $_SERVER['PWD'] . DIRECTORY_SEPARATOR . $argv[1];
+}
+$percentage = isset($argv[2]) ? (int)$argv[2] : 100;
+$percentage = max(0, min(100, $percentage));
+
+if (!realpath($inputFile) || !file_exists($inputFile)) {
+    p('Provided coverage file does not exist.', 2);
+}
 
 // Open clover file.
-$xml = new SimpleXMLElement(file_get_contents(realpath($inputFile)));
-$metrics = $xml->xpath('//metrics');
+try {
+    $xml = new SimpleXMLElement(file_get_contents(realpath($inputFile)));
+    $metrics = $xml->xpath('//metrics');
+} catch (Exception $e) {
+    p('Provided coverage file could not be parsed as Clover XML.', 3);
+}
 $totalElements = $checkedElements = 0;
 
 // Sum up metrics.
@@ -68,8 +86,7 @@ $coverage = ($checkedElements / $totalElements) * 100;
 echo 'Code coverage is ' . number_format($coverage, 1) . '% - ';
 
 if ($coverage < $percentage) {
-    echo "Minimum accepted is {$percentage}%" . PHP_EOL;
-    exit(1);
+    p("Minimum accepted is {$percentage}%", 1);
 }
 
-echo 'OK!' . PHP_EOL;
+p('OK!');
