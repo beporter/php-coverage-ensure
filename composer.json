@@ -1,6 +1,6 @@
 {
     "name": "beporter/coverage-ensure",
-    "description": "PHP CLI script that reads clover.xml coverage reports and returns non-zero when percent coverage is below specified threshold. Intended for use with automated test/build tools like Travis CI, Circle CI and Jenkins.",
+    "description": "PHP CLI script that reads clover.xml coverage reports and returns non-zero when percent coverage is below specified threshold. Intended for use with automated test/build tools like Travis CI, Circle CI, GitHub Actions and Jenkins.",
     "keywords": [
         "code-coverage",
         "ci",
@@ -21,7 +21,7 @@
     },
     "prefer-stable": true,
     "require": {
-        "php": ">=7.0.0"
+        "php": ">=7.0 || >=8.0"
     },
     "bin": [
     	"bin/coverage-ensure",
