@@ -1,4 +1,4 @@
-#!/usr/bin/env php -d register_argc_argv=1
+#!/usr/bin/env php
 <?php
 // @ref: http://ocramius.github.io/blog/automated-code-coverage-check-for-github-pull-requests-with-travis/
 
@@ -14,7 +14,7 @@ function usage($script = null, $exitCode = 0) {
     $usage = <<<EOD
 
 {$script}
-    Uses the provided Clover XML code coverage report value to calculate
+    Uses the provided Clover XML code coverage report path to calculate
     the percentage of code covered by phpunit unit tests. Compares that
     percentage to the provided integer value, and if coverage is lower
     than specified the script returns a non-zero value to indicate failure.
@@ -28,7 +28,7 @@ Usage:
           clover.xml - Filesystem path to an XML file produced by PHPunit's
                        code coverage.
 
-    coverage_percent - Optional integer value between 0 and 100 represented
+    coverage_percent - Optional integer value between 0 and 100 representing
                        the minimum required percentage of coverage required.
                        If not provided, defaults to 100.
 
@@ -47,6 +47,10 @@ function p($s, $code = 0) {
 /**
  * main() ===================================================================
  */
+if (!isset($argv)) {
+    $argv = $_SERVER['argv'];
+    $argc = $_SERVER['argc'];
+}
 
 if (isset($argv[1]) && $argv[1] == '-h' || $argc < 2) {
     usage();
